@@ -3,7 +3,7 @@ class Constants:
 	def __init__(self):
 		self.__appHash = "HASH"
 		self.__appId = 0
-		self.__botUsername = "UserBot"
+		self.__botUsername = "PoliToComBot"
 		self.__creator = 0
 		self.__phoneNumber = "PHONE NUMBER WITH PREFIX AND WITHOUT +"
 

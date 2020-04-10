@@ -1,6 +1,6 @@
 # PoliToComBot
 
-**UserBot**, created by [Giulio Coa](https://t.me/giulioCoaInCamelCase), that do the work of [Combot](https://t.me/combot) for the PoliTo Courses Groups
+**Bot**, created by [Giulio Coa](https://t.me/giulioCoaInCamelCase), that do the work of [Combot](https://t.me/combot) for the PoliTo Courses Groups
 
 
 
@@ -8,7 +8,7 @@
 
 ### Asyncio
 
-Modules used to make the UserBot work on 1 single thread
+Modules used to make the Bot work on 1 single thread
 
 * Version: Python version
 * Documentation: https://docs.python.org/3.9/library/asyncio.html
@@ -47,7 +47,7 @@ Module used to connect to a MySQL Server
 
 ### Pyrogram
 
-Module used to create the UserBot
+Module used to create the Bot
 
 * Version: 0.16.0
 * Website: https://docs.pyrogram.org/

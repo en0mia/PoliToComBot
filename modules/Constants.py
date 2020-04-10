@@ -1,11 +1,35 @@
+import subprocess
+
+
 class Constants:
 
 	def __init__(self):
 		self.__appHash = "HASH"
 		self.__appId = 0
 		self.__botUsername = "PoliToComBot"
+		self.__botToken = "TOKEN DEL BOT"
 		self.__creator = 0
-		self.__phoneNumber = "PHONE NUMBER WITH PREFIX AND WITHOUT +"
+		pwd = str(subprocess.check_output("pwd", shell=True))
+		pwd = pwd.replace("b\'", "")
+		pwd = pwd.replace("\\n\'", "")
+		if pwd == "/":
+			self.__path = "home/USER/Documents/gitHub/{}/".format(self.__botUsername)
+		elif pwd == "/home":
+			self.__path = "USER/Documents/gitHub/{}/".format(self.__botUsername)
+		elif pwd == "/home/USER":
+			self.__path = "Documents/gitHub/{}/".format(self.__botUsername)
+		elif pwd == "/home/USER/Documents":
+			self.__path = "gitHub/{}/".format(self.__botUsername)
+		elif pwd == "/home/USER/Documents/gitHub":
+			self.__path = "{}/".format(self.__botUsername)
+		elif pwd == "/root":
+			self.__path = "/home/USER/Documents/gitHub/{}/".format(self.__botUsername)
+		elif pwd == "/data/data/com.termux/files/home":
+			self.__path = "downloads/{}/".format(self.__botUsername)
+		elif pwd == "/data/data/com.termux/files/home/downloads":
+			self.__path = "{}/".format(self.__botUsername)
+		else:
+			self.__path = "./"
 
 	@property
 	def creator(self) -> int:
@@ -20,6 +44,10 @@ class Constants:
 		self.__creator = 0
 
 	@property
+	def databasePath(self) -> str:
+		return self.__path
+
+	@property
 	def hash(self) -> str:
 		return self.__appHash
 
@@ -28,8 +56,8 @@ class Constants:
 		return self.__appId
 
 	@property
-	def phoneNumber(self) -> str:
-		return self.__phoneNumber
+	def token(self) -> str:
+		return self.__botToken
 
 	@property
 	def username(self) -> str:

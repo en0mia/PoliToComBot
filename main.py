@@ -186,20 +186,19 @@ async def automaticRemovalStatus(_, message: Message):
 @app.on_message(Filters.command("check", prefixes="/") & Filters.user(constants.creator) & Filters.private & stopFilter)
 async def checkDatabase(_, _):
 	# /check
-	global adminsIdList, connection, chatIdList
+	global adminsIdList, connection, chatIdList, database
 
 	await message.delete(revoke=True)
 	with connection.cursor() as cursor:
 		cursor.execute("SELECT * FROM `Admins`")
-		print("{}".format(cursor.fetchall()))
-	print("\n{}\n".format(adminsIdList))
-	print("{}\n".format(list(map(lambda n: "\t{} - {}\n".format(n, type(n)), adminsIdList))))
+		print("{}\n".format(cursor.fetchall()))
+	print("{}\n\n".format(list(map(lambda n: "\t{} - {}\n".format(n, type(n)), adminsIdList))))
 	with connection.cursor() as cursor:
 		cursor.execute("SELECT * FROM `Chats`")
-		print("{}".format(cursor.fetchall()))
-	print("\n{}\n".format(chatIdList))
-	print("{}\n".format(list(map(lambda n: "\t{} - {}\n".format(n, type(n)), chatIdList))))
-	print("\n\n")
+		print("{}\n".format(cursor.fetchall()))
+	print("{}\n\n".format(list(map(lambda n: "\t{} - {}\n".format(n, type(n)), chatIdList))))
+	print("{}\n\n".format(database)
+	print("\n")
 	logger.info("I have checked the admin and the chat list.")
 
 

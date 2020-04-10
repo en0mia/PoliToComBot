@@ -160,21 +160,21 @@ def admin(client: Client, message: Message):
 	message.text = message.text[len("@admin"):]
 	if message.text != "" and message.text[0] not in list([" ", "\n", "\t"]):
 		return
-	# Retrieving the admin
+	# Retrieving the admins
 	match = message.matches.pop(0)
 	with connection.cursor() as cursor:
 		cursor.execute("SELECT `id`, `username` FROM `Admins`")
 		admins = cursor.fetchall()
 	text = "\n@{} needs your help".format(message.from_user.username)
-	# Retrieving the eventual message for the exarch
+	# Retrieving the eventual message for the admins
 	if match.group(2) != "":
 		text += " for {}".format(match.group(2))
 	text += "."
-	# Tagging the exarch
+	# Tagging the admins
 	await message.reply_to_message.reply_text(" ".join(list(map(lambda n: "@{}".format(n["username"]), admins))), quote=True)
 	await message.delete(revoke=True)
 	for i in admins:
-		await client.send_message(i["Players.id"], "@{}{}".format(i["username"], text))
+		await client.send_message(i["id"], "@{}{}".format(i["username"], text))
 	logger.info("I sent @{}\'s request to the competent admin.".format(message.from_user.username))
 
 

@@ -449,7 +449,7 @@ def unknownFilter():
 			if bool(message.matches) is False and text.startswith("/") is True and len(text) > 1:
 				return True
 		return False
-	return Filters.create(func, "UnknownFilter", p=re.compile("/{}".format("|/".join(commands)), 0))
+	return Filters.create(func, "UnknownFilter", p=re.compile("^/{}".format("|^/".join(commands)), 0))
 
 
 @app.on_message(unknownFilter() & Filters.user(adminsIdList) & (Filters.chat(chatIdList) | Filters.private))

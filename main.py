@@ -38,7 +38,10 @@ with connection.cursor() as cursor:
 	for i in cursor.fetchall():
 		chatIdList.append(i["id"])
 chatIdList.append("me")
-logger.info("Chats initializated\nInitializing the Client ...")
+logger.info("Chats initializated\nInitializing the Database ...")
+with open("{}database.json".format(constants.databasePath), "r") as databaseFile:
+	database = json.load(databaseFile)
+logger.info("Database initializated\nInitializing the Client ...")
 app = Client(session_name=constants.username, api_id=constants.id, api_hash=constants.hash, bot_token=constants.token)
 
 
@@ -279,9 +282,32 @@ async def report(_, message: Message):
 	logger.info("I send a report.")
 
 
-@app.on_message(Filters.chat(chatIdList) & Filters.regex("^(\@admin)\s?(.*)$", re.IGNORECASE | re.UNICODE | re.MULTILINE))
-def reputation():
-	pass
+@app.on_message(Filters.chat(chatIdList) & Filters.regex("^\+$|^\-$", re.IGNORECASE | re.UNICODE | re.MULTILINE))
+def reputation(_, message: Message):
+	global database
+
+	for i in database:
+		# Searching the chat in the database
+		if i["id"] == message.chat.id:
+			# Checking if the user is already in the database and changing its reputation
+			if message.from_user.id in list(map(lambda n: n["id"], i["reputation"])):
+				for j in i["reputation"]:
+					# Searching the user in the database
+					if j["id"] == message.from_user.id:
+						if message.text.startswith("+") is True:
+							j["quantity"] += 1
+						else:
+							j["quantity"] -= 1
+							if j["quantity"] < 0:
+								j["quantity"] = 0
+						break
+			else:
+				i["reputation"].append(dict({"id": message.from_user.id, "quantity": 1 if message.text.startswith("+") is True else 0}))
+			break
+	# Saving the database
+	with open("{}database.json".format(constants.databasePath), "w") as databaseFile:
+		databaseFile.write(database)
+	logger.info("I changed ({}) the reputation of @{}.".format("+" if message.text.startswith("+") is True else "-", message.from_user.username))
 
 
 @app.on_message(Filters.command("scheduling", prefixes="/") & Filters.user(adminsIdList) & Filters.private)

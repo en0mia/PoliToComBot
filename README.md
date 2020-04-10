@@ -16,17 +16,6 @@ Modules used to make the Bot work on 1 single thread
 
 
 
-### Pandas
-
-Open source easy-to-use data structures and data analysis tools for Python
-
-* Version: 1.0.3
-* Website: https://pandas.pydata.org/docs/
-* Documentation: https://pandas.pydata.org/docs/reference/frame.html
-* Module name: **pandas**
-
-
-
 ### PyMySQL
 
 Module used to connect to a MySQL Server
@@ -57,17 +46,6 @@ Module used to create the Bot
 
 
 
-### Requests
-
-HTTP library for Python, built for human beings
-
-* Version: 2.23.0
-* Website: https://requests.readthedocs.io/en/master/
-* Documentation: https://requests.readthedocs.io/en/master/user/advanced/
-* Module name: **requests**
-
-
-
 
 ### Schedule
 
@@ -77,15 +55,3 @@ Python job scheduling for humans
 * Website: https://schedule.readthedocs.io/en/stable/
 * Documentation: https://schedule.readthedocs.io/en/stable/api.html
 * Module name: **schedule**
-
-
-
-### Telegraph
-
-Python Telegraph API wrapper
-
-* Version: 1.4.0
-* Website: https://python-telegraph.readthedocs.io/en/latest/
-* Documentation: https://python-telegraph.readthedocs.io/en/latest/telegraph.html
-* Module name: **telegraph**
-* Requirements: **requests**

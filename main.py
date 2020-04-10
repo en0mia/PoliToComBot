@@ -3,8 +3,7 @@ import logging as logger
 from modules import Constants
 import os
 import pymysql
-from pyrogram import Client, Emoji, Filters, Message
-from pyrogram.api.functions.account import UpdateStatus
+from pyrogram import Client, Filters, Message
 from pyrogram.api.functions.help import GetConfig
 from pyrogram.errors import FloodWait
 import re
@@ -148,12 +147,40 @@ async def addToTheDatabase(client: Client, message: Message):
 	logger.info(text)
 
 
-@app.on_message(Filters.service)
+@app.on_message(Filters.chat(chatIdList) & Filters.regex("^(\@admin)\s?(.*)$", re.IGNORECASE | re.UNICODE | re.MULTILINE))
+def admin(client: Client, message: Message):
+	global connection, constants
+
+	# Checking if the message have the correct syntax
+	if message.text.startswith("@admin") is False or len(message.matches) != 1:
+		return
+	message.text = message.text[len("@admin"):]
+	if message.text != "" and message.text[0] not in list([" ", "\n", "\t"]):
+		return
+	# Retrieving the admin
+	match = message.matches.pop(0)
+	with connection.cursor() as cursor:
+		cursor.execute("SELECT `id`, `username` FROM `Admins`")
+		admins = cursor.fetchall()
+	text = "\n@{} needs your help".format(message.from_user.username)
+	# Retrieving the eventual message for the exarch
+	if match.group(2) != "":
+		text += " for {}".format(match.group(2))
+	text += "."
+	# Tagging the exarch
+	await message.reply_to_message.reply_text(" ".join(list(map(lambda n: "@{}".format(n["username"]), admins))), quote=True)
+	await message.delete(revoke=True)
+	for i in admins:
+		await client.send_message(i["Players.id"], "@{}{}".format(i["username"], text))
+	logger.info("I sent @{}\'s request to the competent admin.".format(message.from_user.username))
+
+
+@app.on_message(Filters.service & Filters.chat(chatIdList))
 async def automaticRemovalStatus(_, message: Message):
 	await message.delete(revoke=True)
 
 
-@app.on_message(Filters.command("check", prefixes="/") & Filters.user(constants.creator) & Filters.chat(chatIdList) & stopFilter)
+@app.on_message(Filters.command("check", prefixes="/") & Filters.user(constants.creator) & Filters.private & stopFilter)
 async def checkDatabase(_, _):
 	# /check
 	global adminsIdList, connection, chatIdList
@@ -173,7 +200,7 @@ async def checkDatabase(_, _):
 	logger.info("I have checked the admin and the chat list.")
 
 
-@app.on_message(Filters.command("evaluate", prefixes="/") & Filters.user(constants.creator))
+@app.on_message(Filters.command("evaluate", prefixes="/") & Filters.chat(chatIdList) & Filters.user(constants.creator))
 async def evaluation(_, message: Message):
 	# /evaluate
 	global messageMaxLength
@@ -194,7 +221,7 @@ async def evaluation(_, message: Message):
 	logger.info("I have evaluated the command <code>{}</code>.".format(command))
 
 
-@app.on_message(Filters.command("exec", prefixes="/") & Filters.user(constants.creator))
+@app.on_message(Filters.command("exec", prefixes="/") & Filters.chat(chatIdList) & Filters.user(constants.creator))
 async def execution(_, message: Message):
 	# /exec
 	global messageMaxLength
@@ -220,7 +247,7 @@ async def execution(_, message: Message):
 	logger.info("I have executed the command <code>{}</code>.".format(command))
 
 
-@app.on_message(Filters.command("help", prefixes="/") & Filters.user(constants.creator) & Filters.chat(chatIdList))
+@app.on_message(Filters.command("help", prefixes="/") & Filters.user(constants.creator) & Filters.private)
 async def help(_, message: Message):
 	# /help
 	global commands
@@ -247,13 +274,17 @@ async def report(_, message: Message):
 							"/help - Show the help\n" +
 							"/report - Send a report on the list of the commands\n" +
 							"/scheduling - Start the Job Queue\n" +
-							"/update - Update the database\n" +
-							"/scheduling - Start the Job Queue\n" +
-							"/start - Start the bot")
+							"/start - Start the bot\n" +
+							"/update - Update the database")
 	logger.info("I send a report.")
 
 
-@app.on_message(Filters.command("scheduling", prefixes="/") & Filters.user(adminsIdList))
+@app.on_message(Filters.chat(chatIdList) & Filters.regex("^(\@admin)\s?(.*)$", re.IGNORECASE | re.UNICODE | re.MULTILINE))
+def reputation():
+	pass
+
+
+@app.on_message(Filters.command("scheduling", prefixes="/") & Filters.user(adminsIdList) & Filters.private)
 def scheduling(client: Client, _):
 	# /scheduling
 	global messageMaxLength, scheduler
@@ -271,7 +302,7 @@ async def start(_, message: Message):
 	logger.info("I started because of @{}.".format(message.from_user.username))
 
 
-@app.on_message(Filters.command("update", prefixes="/") & Filters.user(adminsIdList) & stopFilter)
+@app.on_message(Filters.command("update", prefixes="/") & Filters.user(adminsIdList) & Filters.private & stopFilter)
 async def updateDatabase(client: Client, message: Message = None):
 	# /update
 	global adminsIdList, chatIdList, connection, constants, stopFilter
@@ -396,7 +427,7 @@ def unknownFilter():
 	return Filters.create(func, "UnknownFilter", p=re.compile("/{}".format("|/".join(commands)), 0))
 
 
-@app.on_message(unknownFilter() & Filters.user(adminsIdList) & Filters.chat(chatIdList))
+@app.on_message(unknownFilter() & Filters.user(adminsIdList) & (Filters.chat(chatIdList) | Filters.private))
 async def unknown(_, message: Message):
 	await message.edit_text("This command isn\'t supported.")
 	logger.info("I managed an unsupported command.")

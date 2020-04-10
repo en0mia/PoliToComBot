@@ -1,6 +1,6 @@
-# PoliToComBot
+# PoliToComBot template
 
-**Bot**, created by [Giulio Coa](https://t.me/giulioCoaInCamelCase), that do the work of [Combot](https://t.me/combot) for the PoliTo Courses Groups
+**Python template** for building a **Bot** that do the work of [Combot](https://t.me/combot) for the PoliTo Courses Groups
 
 
 

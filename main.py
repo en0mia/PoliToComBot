@@ -137,6 +137,7 @@ async def addToTheDatabase(client: Client, message: Message):
 	with connection.cursor() as cursor:
 		if constants.creator in lists:
 			cursor.execute("INSERT INTO `Admins` (`id`, `is_self` ,`is_contact`, `is_mutual_contact`, `is_deleted`, `is_bot`, `is_verified`, `is_restricted`, `is_scam`, `is_support`, `first_name`, `last_name`, `username`, `language_code`, `phone_number`, `role`) VALUES (%(id)s, %(is_self)s, %(is_contact)s, %(is_mutual_contact)s, %(is_deleted)s, %(is_bot)s, %(is_verified)s, %(is_restricted)s, %(is_scam)s, %(is_support)s, %(first_name)s, %(last_name)s, %(username)s, %(language_code)s, %(phone_number)s)", chat)
+			async message.chat.promote_member(chat["id"], can_change_info=True, can_post_messages=True, can_edit_messages=False, can_delete_messages=True, can_restrict_members=True, can_invite_users=True, can_pin_messages=True, can_promote_members=False)
 			text = "I added {}{} to the list of allowed user.".format("{} ".format(chat["first_name"]) if chat["first_name"] is not None else "", "{} ".format(chat["last_name"]) if chat["last_name"] is not None else "")
 		else:
 			cursor.execute("INSERT INTO `Chats` (`id`, `type`, `is_verified`, `is_restricted`, `is_scam`, `is_support`, `title`, `username`, `first_name`, `last_name`, `invite_link`) VALUES (%(id)s, %(type)s, %(is_verified)s, %(is_restricted)s, %(is_scam)s, %(is_support)s, %(title)s, %(username)s, %(first_name)s, %(last_name)s, %(invite_link)s)", chat)
@@ -185,6 +186,10 @@ async def banHammer(client: Client, message: Message):
 	# /unban <username>
 	global adminsIdList
 
+	user = client.get_chat_member(message.chat.id, message.from_user.id)
+	if user.can_restrict_members is False:
+		await message.delete(revoke=True)
+		return
 	command = message.command.pop(0)
 	if command == "unban"
 		user = await client.get_users(message.command.pop(0))
@@ -311,6 +316,7 @@ async def removeFromTheDatabase(_, message: Message):
 	with connection.cursor() as cursor:
 		if constants.creator in lists:
 			cursor.execute("DELETE FROM `Admins` WHERE `id`=%(id)s", dict({"id": ids}))
+			async message.chat.restrict_member(chat["id"], can_send_messages=True, can_send_media_messages=True, can_send_other_messages=True, can_add_web_page_previews=True, can_send_polls=True, can_change_info=False, can_invite_users=True, can_pin_messages=False)
 			text = "The user @{} has been removed from the admins list.".format(message.reply_to_message.from_user.username)
 		else:
 			cursor.execute("DELETE FROM `Chats` WHERE `id`=%(id)s", dict({"id": ids}))

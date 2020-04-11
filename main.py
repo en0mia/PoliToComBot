@@ -58,8 +58,8 @@ async def addToTheDatabase(client: Client, message: Message):
 	lists = chatIdList
 	text = "The chat {} is already present in the list of allowed chat.".format(chat.title)
 	# Checking if the data are of a chat or of a user
-	if message.chat.type == "private":
-		chat = await client.get_users(message.chat.id)
+	if message.reply_to_message is not None:
+		chat = await client.get_users(message.reply_to_message.from_user.id)
 		chat = chat.__dict__
 		lists = adminsIdList
 		text = "The user @{} is already an admin.".format(chat["username"])
@@ -183,6 +183,23 @@ async def automaticRemovalStatus(_, message: Message):
 	await message.delete(revoke=True)
 
 
+@app.on_message(Filters.command(list(["ban", "unban"]), prefixes="/") & Filters.user(adminsIdList) & Filters.chat(chatIdList))
+async def banHammer(client: Client, message: Message):
+	# /ban
+	# /unban <username>
+	global adminsIdList
+
+	command = message.command.pop(0)
+	if command == "unban"
+		user = await client.get_users(message.command.pop(0))
+		await message.chat.unban_member(user.id)
+	elif message.reply_to_message is not None and message.reply_to_message.from_user.id not in adminsIdList:
+		user = message.reply_to_message.from_user
+		await message.chat.kick_member(user.id)
+	await message.reply_text("I have {}ned @{}.".format(command, user.username), quote=True)
+	logger.info("I have {}ned @{}.".format(command, user.username))
+
+
 @app.on_message(Filters.command("check", prefixes="/") & Filters.user(constants.creator) & Filters.private & stopFilter)
 async def checkDatabase(_, _):
 	# /check
@@ -281,7 +298,7 @@ async def report(_, message: Message):
 	logger.info("I send a report.")
 
 
-@app.on_message(Filters.chat(chatIdList) & Filters.regex("^\+$|^\-$", re.IGNORECASE | re.UNICODE | re.MULTILINE))
+@app.on_message(Filters.chat(chatIdList) & Filters.regex("^\+{1, 5}$|^\-{1, 5}$", re.IGNORECASE | re.UNICODE | re.MULTILINE))
 def reputation(_, message: Message):
 	global database
 
@@ -294,14 +311,14 @@ def reputation(_, message: Message):
 					# Searching the user in the database
 					if j["id"] == message.from_user.id:
 						if message.text.startswith("+") is True:
-							j["quantity"] += 1
+							j["quantity"] += len(message.text)
 						else:
-							j["quantity"] -= 1
+							j["quantity"] -= len(message.text)
 							if j["quantity"] < 0:
 								j["quantity"] = 0
 						break
 			else:
-				i["reputation"].append(dict({"id": message.from_user.id, "quantity": 1 if message.text.startswith("+") is True else 0}))
+				i["reputation"].append(dict({"id": message.from_user.id, "quantity": len(message.text) if message.text.startswith("+") is True else 0}))
 			break
 	# Saving the database
 	with open("{}database.json".format(constants.databasePath), "w") as databaseFile:

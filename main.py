@@ -17,7 +17,7 @@ def stopFilterCommute(self):
 
 adminsIdList = list()
 chatIdList = list()
-commands = list(["add", "check", "evaluate", "exec", "help", "scheduling", "update"])
+commands = list(["add", "ban", "check", "evaluate", "exec", "help", "remove", "report", "scheduling", "start", "unban", "update"])
 connection = pymysql.connect(host="localhost", user="myUser", password="myPassword", database=constants.username, port=3306, charset="utf8", cursorclass=pymysql.cursors.DictCursor, autocommit=False)
 constants = Constants.Constants()
 logger.basicConfig(filename="{}{}.log".format(constants.databasePath, constants.username), datefmt="%d/%m/%Y %H:%M:%S", format="At %(asctime)s was logged the event:\t%(levelname)s - %(message)s", level=logger.INFO)
@@ -37,7 +37,6 @@ with connection.cursor() as cursor:
 	cursor.execute("SELECT `id` FROM `Chats`")
 	for i in cursor.fetchall():
 		chatIdList.append(i["id"])
-chatIdList.append("me")
 logger.info("Chats initializated\nInitializing the Database ...")
 with open("{}database.json".format(constants.databasePath), "r") as databaseFile:
 	database = json.load(databaseFile)
@@ -48,7 +47,7 @@ app = Client(session_name=constants.username, api_id=constants.id, api_hash=cons
 @app.on_message(Filters.command("add", prefixes="/") & (Filters.user(constants.creator) | Filters.channel) & stopFilter)
 async def addToTheDatabase(client: Client, message: Message):
 	# /add
-	global adminsIdList, chatIdList, connection, stopFilter
+	global adminsIdList, chatIdList, connection, constants, stopFilter
 
 	await stopFilter.commute()
 	# Checking if the message arrive from a channel and, if not, checking if the user that runs the command is allowed
@@ -66,18 +65,15 @@ async def addToTheDatabase(client: Client, message: Message):
 	else:
 		chat = await client.get_chat(message.chat.id)
 		chat = chat.__dict__
-	# Deleting the message
-	await message.delete(revoke=True)
+		# Deleting the message
+		await message.delete(revoke=True)
 	# Checking if the chat/user is in the list
-	if chat["id"] == constants.creator or chat["id"] in lists:
+	if chat["id"] in lists:
 		await stopFilter.commute()
 		logger.info(text)
 		return
 	# Adding the chat/user to the database
-	if message.chat.type == "private":
-		adminsIdList.append(chat["id"])
-	else:
-		chatIdList.append(chat["id"])
+	lists.append(chat["id"])
 	try:
 		del chat["_client"]
 	except KeyError:
@@ -139,7 +135,7 @@ async def addToTheDatabase(client: Client, message: Message):
 	except KeyError:
 		pass
 	with connection.cursor() as cursor:
-		if message.chat.type == "private":
+		if constants.creator in lists:
 			cursor.execute("INSERT INTO `Admins` (`id`, `is_self` ,`is_contact`, `is_mutual_contact`, `is_deleted`, `is_bot`, `is_verified`, `is_restricted`, `is_scam`, `is_support`, `first_name`, `last_name`, `username`, `language_code`, `phone_number`, `role`) VALUES (%(id)s, %(is_self)s, %(is_contact)s, %(is_mutual_contact)s, %(is_deleted)s, %(is_bot)s, %(is_verified)s, %(is_restricted)s, %(is_scam)s, %(is_support)s, %(first_name)s, %(last_name)s, %(username)s, %(language_code)s, %(phone_number)s)", chat)
 			text = "I added {}{} to the list of allowed user.".format("{} ".format(chat["first_name"]) if chat["first_name"] is not None else "", "{} ".format(chat["last_name"]) if chat["last_name"] is not None else "")
 		else:
@@ -283,6 +279,47 @@ async def help(_, message: Message):
 	await client.send(UpdateStatus(offline=True))
 
 
+@app.on_message(Filters.command("remove", prefixes="/") & (Filters.user(constants.creator) | Filters.channel) & stopFilter)
+async def removeFromTheDatabase(client: Client, message: Message):
+	# /remove
+	global adminsIdList, chatIdList, connection, constants, stopFilter
+
+	await stopFilter.commute()
+	# Checking if the message arrive from a channel and, if not, checking if the user that runs the command is allowed
+	if message.from_user is not None and message.from_user.id != constants.creator:
+		await stopFilter.commute()
+		return
+	lists = chatIdList
+	title = message.chat.title
+	text = "The chat {} hasn\'t been removed from the list of allowed chat.".format(title)
+	# Checking if the data are of a chat or of a user
+	if message.reply_to_message is not None:
+		ids = message.reply_to_message.from_user.id
+		lists = adminsIdList
+		text = "The user @{} hasn\'t been removed from the admins list.".format(message.reply_to_message.from_user.username)
+	else:
+		ids = message.chat.id
+		# Deleting the message
+		await message.delete(revoke=True)
+	# Checking if the chat/user is in the list
+	if ids not in lists:
+		await stopFilter.commute()
+		logger.info(text)
+		return
+	# Removing the chat/user from the database
+	lists.remove(ids)
+	with connection.cursor() as cursor:
+		if constants.creator in lists:
+			cursor.execute("DELETE FROM `Admins` WHERE `id`=%(id)s", dict({"id": ids}))
+			text = "The user @{} has been removed from the admins list.".format(message.reply_to_message.from_user.username)
+		else:
+			cursor.execute("DELETE FROM `Chats` WHERE `id`=%(id)s", dict({"id": ids}))
+			text = "The chat {} has been removed from the list of allowed chat.".format(title)
+		connection.commit()
+	await stopFilter.commute()
+	logger.info(text)
+
+
 @app.on_message(Filters.command("report", prefixes=list(["/"])) & Filters.user(constants.creator) & Filters.private)
 async def report(_, message: Message):
 	# /report
@@ -397,13 +434,11 @@ async def updateDatabase(client: Client, message: Message = None):
 		connection.commit()
 	# Updating the chats' database
 	chats = list()
-	chatIdList.remove("me")
 	for i in chatIdList:
 		try:
 			await chats.append(client.get_chat(i).__dict__)
 		except FloodWait as e:
 			time.sleep(e.x)
-	chatIdList.append("me")
 	with connection.cursor() as cursor:
 		for i in chats:
 			try:

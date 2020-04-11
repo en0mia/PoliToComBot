@@ -280,7 +280,7 @@ async def help(_, message: Message):
 
 
 @app.on_message(Filters.command("remove", prefixes="/") & (Filters.user(constants.creator) | Filters.channel) & stopFilter)
-async def removeFromTheDatabase(client: Client, message: Message):
+async def removeFromTheDatabase(_, message: Message):
 	# /remove
 	global adminsIdList, chatIdList, connection, constants, stopFilter
 
